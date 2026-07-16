@@ -1,11 +1,15 @@
 """Domain models for bookings and conversation sessions."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 class BookingStatus(str, Enum):
@@ -26,8 +30,8 @@ class Booking(BaseModel):
     status: BookingStatus = BookingStatus.PENDING
     preferred_slot: str | None = None
     confirmed_slot: str | None = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=_utcnow)
+    updated_at: datetime = Field(default_factory=_utcnow)
 
 
 class TimeSlot(BaseModel):
@@ -42,7 +46,7 @@ class ActivityEvent(BaseModel):
     step: str
     message: str
     metadata: dict[str, Any] = Field(default_factory=dict)
-    at: datetime = Field(default_factory=datetime.utcnow)
+    at: datetime = Field(default_factory=_utcnow)
 
 
 class Session(BaseModel):
@@ -52,3 +56,5 @@ class Session(BaseModel):
     booking: Booking
     activity: list[ActivityEvent] = Field(default_factory=list)
     is_booked: bool = False
+    # Serialized LangChain-style turns: {"role": "user"|"assistant", "content": "..."}
+    history: list[dict[str, str]] = Field(default_factory=list)

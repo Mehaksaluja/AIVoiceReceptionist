@@ -1,12 +1,9 @@
-"""In-memory session store — swap for Redis/Postgres later."""
-
 from threading import Lock
 
 from src.models.booking import ActivityEvent, Booking, BookingStatus, Session
 
 
 class SessionStore:
-    """Thread-safe dict store for agent conversations."""
 
     def __init__(self) -> None:
         self._sessions: dict[str, Session] = {}
@@ -65,5 +62,4 @@ class SessionStore:
             return list(self._sessions.values())
 
 
-# Process-wide singleton
 store = SessionStore()
