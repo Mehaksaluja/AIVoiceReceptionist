@@ -11,11 +11,42 @@ class StartSessionRequest(BaseModel):
         description="E.164 phone number",
     )
     reason: str = Field(min_length=3, max_length=500, examples=["Dental checkup"])
+    # If true, skip text greeting and place a Vapi outbound call instead
+    trigger_call: bool = False
 
 
 class ChatRequest(BaseModel):
     session_id: str
     message: str = Field(min_length=1, max_length=2000)
+
+
+class CallRequest(BaseModel):
+    """Create session + place outbound call in one step."""
+
+    name: str = Field(min_length=2, max_length=100)
+    phone: str = Field(pattern=r"^\+[1-9]\d{6,14}$")
+    reason: str = Field(min_length=3, max_length=500)
+
+
+class WebCallRequest(BaseModel):
+    """Browser voice — phone optional (not dialed)."""
+
+    name: str = Field(min_length=2, max_length=100)
+    phone: str = Field(
+        default="+910000000000",
+        pattern=r"^\+[1-9]\d{6,14}$",
+        description="Optional for web; used in booking record only",
+    )
+    reason: str = Field(min_length=3, max_length=500)
+
+
+class WebCallResponse(BaseModel):
+    session_id: str
+    booking_id: str
+    public_key: str
+    assistant: dict
+    caller_display_name: str
+    caller_subtitle: str
 
 
 class ActivityOut(BaseModel):
@@ -31,5 +62,6 @@ class SessionResponse(BaseModel):
     status: str
     is_booked: bool
     confirmed_slot: str | None = None
+    vapi_call_id: str | None = None
     reply: str | None = None
     activity: list[ActivityOut] = Field(default_factory=list)

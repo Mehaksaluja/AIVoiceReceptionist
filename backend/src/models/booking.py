@@ -30,6 +30,7 @@ class Booking(BaseModel):
     status: BookingStatus = BookingStatus.PENDING
     preferred_slot: str | None = None
     confirmed_slot: str | None = None
+    vapi_call_id: str | None = None
     created_at: datetime = Field(default_factory=_utcnow)
     updated_at: datetime = Field(default_factory=_utcnow)
 

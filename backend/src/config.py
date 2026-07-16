@@ -17,13 +17,18 @@ class Settings(BaseSettings):
     app_port: int = 8000
     app_env: str = "development"
     clinic_name: str = "XYZ Clinic"
+    # Public HTTPS URL (ngrok) so Vapi can reach our webhooks/tools
+    public_base_url: str = ""
 
     openai_api_key: str = Field(default="", description="OpenAI API key")
     openai_model: str = "gpt-4o"
 
     vapi_api_key: str = ""
+    vapi_public_key: str = ""  # browser Web SDK (safe for frontend)
     vapi_assistant_id: str = ""
     vapi_phone_number_id: str = ""
+    # False = transient assistant (recommended for local/ngrok)
+    vapi_use_saved_assistant: bool = False
 
     google_service_account_path: str = "./credentials/google-service-account.json"
     google_calendar_id: str = "primary"
@@ -45,9 +50,22 @@ class Settings(BaseSettings):
 
     @property
     def has_vapi(self) -> bool:
-        return bool(
-            self.vapi_api_key and self.vapi_assistant_id and self.vapi_phone_number_id
-        )
+        # Phone number required only for PSTN outbound
+        return bool(self.vapi_api_key and self.vapi_phone_number_id)
+
+    @property
+    def has_vapi_web(self) -> bool:
+        """Browser voice — needs public key + webhook URL (no phone number)."""
+        return bool(self.vapi_public_key.strip() and self.public_base_url.strip())
+
+    @property
+    def has_google_credentials(self) -> bool:
+        from pathlib import Path
+
+        path = Path(self.google_service_account_path)
+        if not path.is_absolute():
+            path = Path.cwd() / path
+        return path.is_file()
 
 
 @lru_cache

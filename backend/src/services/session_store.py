@@ -40,6 +40,21 @@ class SessionStore:
                 ActivityEvent(step=step, message=message, metadata=dict(metadata))
             )
 
+    def set_vapi_call(self, session_id: str, call_id: str) -> Session | None:
+        with self._lock:
+            session = self._sessions.get(session_id)
+            if not session:
+                return None
+            session.booking.vapi_call_id = call_id
+            session.activity.append(
+                ActivityEvent(
+                    step="call_triggered",
+                    message="Outbound AI call initiated",
+                    metadata={"vapi_call_id": call_id},
+                )
+            )
+            return session
+
     def mark_confirmed(self, session_id: str, confirmed_slot: str) -> Session | None:
         with self._lock:
             session = self._sessions.get(session_id)
