@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+  --color-clinical-50: #eff6ff;
+  --color-clinical-100: #dbeafe;
+  --color-clinical-500: #3b82f6;
+  --color-clinical-600: #2563eb;
+  --color-clinical-700: #1d4ed8;
+  --color-clinical-900: #1e3a5f;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background-color: #dbeafe;
+  color: #1e3a5f;
+}
