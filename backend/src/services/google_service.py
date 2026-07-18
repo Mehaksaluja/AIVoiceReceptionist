@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -165,3 +165,60 @@ def service_account_email() -> str | None:
         return data.get("client_email")
     except (OSError, json.JSONDecodeError):
         return None
+
+
+def get_busy_intervals(
+    start: datetime,
+    end: datetime,
+) -> list[tuple[datetime, datetime]]:
+    """
+    Return busy intervals from Google Calendar FreeBusy API (IST).
+    Empty list when calendar is not configured (mock mode).
+    """
+    if not _has_credentials_file() or not settings.google_calendar_id:
+        return []
+
+    from googleapiclient.discovery import build
+
+    if start.tzinfo is None:
+        start = start.replace(tzinfo=IST)
+    if end.tzinfo is None:
+        end = end.replace(tzinfo=IST)
+
+    body = {
+        "timeMin": start.astimezone(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "timeMax": end.astimezone(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "timeZone": "Asia/Kolkata",
+        "items": [{"id": settings.google_calendar_id}],
+    }
+
+    creds = _build_credentials()
+    service = build("calendar", "v3", credentials=creds, cache_discovery=False)
+    result = service.freebusy().query(body=body).execute()
+
+    cal_data = result.get("calendars", {}).get(settings.google_calendar_id, {})
+    intervals: list[tuple[datetime, datetime]] = []
+
+    for block in cal_data.get("busy", []):
+        busy_start = datetime.fromisoformat(block["start"].replace("Z", "+00:00")).astimezone(IST)
+        busy_end = datetime.fromisoformat(block["end"].replace("Z", "+00:00")).astimezone(IST)
+        intervals.append((busy_start, busy_end))
+
+    return intervals
+
+
+def is_slot_free(
+    slot_start: datetime,
+    duration_minutes: int,
+    busy_intervals: list[tuple[datetime, datetime]],
+) -> bool:
+    """True when [slot_start, slot_start + duration) does not overlap any busy block."""
+    if slot_start.tzinfo is None:
+        slot_start = slot_start.replace(tzinfo=IST)
+    slot_end = slot_start + timedelta(minutes=duration_minutes)
+
+    for busy_start, busy_end in busy_intervals:
+        if slot_start < busy_end and slot_end > busy_start:
+            return False
+    return True
+

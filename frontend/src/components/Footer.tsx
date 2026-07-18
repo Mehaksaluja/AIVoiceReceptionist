@@ -46,7 +46,7 @@ export default function Footer() {
           <div>
             <p className="text-sm font-bold text-white">Get in touch</p>
             <ul className="mt-4 space-y-2 text-sm text-blue-200/80">
-              <li>+91 98765 43210</li>
+              <li>+91 9898989898</li>
               <li>hello@brightsmile.in</li>
               <li>Mon–Sat, 9 AM – 8 PM</li>
             </ul>

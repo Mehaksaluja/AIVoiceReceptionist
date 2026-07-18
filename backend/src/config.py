@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     google_calendar_id: str = "primary"
     google_sheet_id: str = ""
 
+    clinic_open_hour: int = 9
+    clinic_close_hour: int = 20
+    appointment_duration_minutes: int = 30
+
     sendgrid_api_key: str = ""
     sendgrid_from_email: str = ""
     twilio_account_sid: str = ""

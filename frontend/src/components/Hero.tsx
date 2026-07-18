@@ -1,4 +1,5 @@
 import { ArrowRight, CircleCheck, Star, type LucideIcon } from "lucide-react";
+import { useBooking } from "../context/BookingContext";
 
 const stats: { value: string; label: string; icon?: LucideIcon }[] = [
   { value: "15+", label: "Years of care" },
@@ -13,6 +14,8 @@ const features = [
 ];
 
 export default function Hero() {
+  const { openVoiceBooking } = useBooking();
+
   return (
     <section className="relative overflow-hidden bg-white">
       {/* Soft wash behind text only — image sits flush on the right */}
@@ -53,14 +56,14 @@ export default function Hero() {
             </ul>
 
             <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <a
-                id="book"
-                href="#book"
+              <button
+                type="button"
+                onClick={openVoiceBooking}
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-clinical-600 px-8 py-4 text-base font-semibold text-white shadow-lg shadow-clinical-600/25 transition hover:bg-clinical-700"
               >
                 Book Appointment
                 <ArrowRight className="h-4 w-4" aria-hidden />
-              </a>
+              </button>
               <a
                 href="#services"
                 className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-8 py-4 text-base font-semibold text-slate-700 transition hover:border-clinical-300 hover:text-clinical-700"

@@ -25,3 +25,14 @@ body {
   background-color: #dbeafe;
   color: #1e3a5f;
 }
+
+@keyframes voice-bar {
+  from {
+    transform: scaleY(0.4);
+    opacity: 0.6;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}

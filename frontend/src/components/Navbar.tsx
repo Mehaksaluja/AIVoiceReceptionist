@@ -1,5 +1,6 @@
-import { Menu, Phone, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useBooking } from "../context/BookingContext";
 
 function LogoMark({ className = "h-9 w-9" }: { className?: string }) {
   return (
@@ -22,6 +23,7 @@ const links = [
 ];
 
 export default function Navbar() {
+  const { openVoiceBooking } = useBooking();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -40,20 +42,8 @@ export default function Navbar() {
 
   return (
     <>
-      <div className="fixed inset-x-0 top-0 z-[60] hidden border-b border-white/10 bg-clinical-900 text-white sm:block">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 text-xs font-medium sm:px-6 lg:px-8">
-          <p className="flex items-center gap-2 text-blue-100/90">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            Mon–Sat 9:00 AM – 8:00 PM · Emergency slots available
-          </p>
-          <a href="tel:+919876543210" className="transition hover:text-white">
-            +91 98765 43210
-          </a>
-        </div>
-      </div>
-
       <header
-        className={`fixed inset-x-0 z-50 transition-all duration-300 top-0 sm:top-9 ${
+        className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
           scrolled
             ? "border-b border-slate-200/90 bg-white/95 shadow-[0_4px_24px_rgba(15,23,42,0.06)] backdrop-blur-lg"
             : "border-b border-transparent bg-white/70 backdrop-blur-md"
@@ -86,19 +76,13 @@ export default function Navbar() {
           </ul>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <a
-              href="tel:+919876543210"
-              className="hidden items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 lg:inline-flex"
-            >
-              <Phone className="h-4 w-4 text-clinical-600" strokeWidth={1.75} aria-hidden />
-              Call us
-            </a>
-            <a
-              href="#book"
+            <button
+              type="button"
+              onClick={openVoiceBooking}
               className="hidden rounded-full bg-clinical-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-clinical-600/25 transition hover:bg-clinical-700 sm:inline-block"
             >
               Book Appointment
-            </a>
+            </button>
             <button
               type="button"
               aria-label={menuOpen ? "Close menu" : "Open menu"}
@@ -123,7 +107,7 @@ export default function Navbar() {
         />
       )}
       <div
-        className={`fixed inset-x-0 top-16 z-50 border-b border-slate-200 bg-white px-4 py-6 shadow-xl transition md:hidden sm:top-[calc(2.25rem+4.25rem)] ${
+        className={`fixed inset-x-0 top-16 z-50 border-b border-slate-200 bg-white px-4 py-6 shadow-xl transition md:hidden ${
           menuOpen ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-2 opacity-0"
         }`}
       >
@@ -140,13 +124,16 @@ export default function Navbar() {
             </li>
           ))}
         </ul>
-        <a
-          href="#book"
-          className="mt-4 block rounded-full bg-clinical-600 py-3.5 text-center text-sm font-semibold text-white"
-          onClick={() => setMenuOpen(false)}
+        <button
+          type="button"
+          onClick={() => {
+            setMenuOpen(false);
+            openVoiceBooking();
+          }}
+          className="mt-4 block w-full rounded-full bg-clinical-600 py-3.5 text-center text-sm font-semibold text-white"
         >
           Book Appointment
-        </a>
+        </button>
       </div>
     </>
   );

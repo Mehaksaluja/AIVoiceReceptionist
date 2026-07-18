@@ -1,12 +1,12 @@
-import { Clock, Mail, Map, MapPin, Phone } from "lucide-react";
-import { useState } from "react";
+import { Clock, Mail, Map, MapPin, Mic, Phone } from "lucide-react";
 import SectionHeader from "./SectionHeader";
+import { useBooking } from "../context/BookingContext";
 
 const contactInfo = [
   {
     label: "Phone",
-    value: "+91 98765 43210",
-    href: "tel:+919876543210",
+    value: "+91 9898989898",
+    href: "tel:+919898989898",
     icon: Phone,
   },
   {
@@ -30,84 +30,60 @@ const contactInfo = [
 ];
 
 export default function Contact() {
-  const [submitted, setSubmitted] = useState(false);
-
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setSubmitted(true);
-  }
+  const { openVoiceBooking } = useBooking();
 
   return (
     <section id="contact" className="bg-white py-20 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeader
           label="Contact"
-          title="Visit us or book online"
-          description="Fill out the form and our AI receptionist will call you within 30 seconds to confirm your slot."
+          title="Book with our voice assistant"
+          description="No form to fill out. Start a voice session and the receptionist will ask for your details and schedule a time."
         />
 
         <div className="mt-14 grid gap-12 lg:grid-cols-5">
           <div id="book" className="scroll-mt-32 lg:col-span-3">
             <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-6 sm:p-8">
-              <h3 className="text-xl font-bold text-slate-900">Book an appointment</h3>
-              <p className="mt-1 text-sm text-slate-600">
-                We&apos;ll connect you with our AI assistant to schedule instantly.
-              </p>
-
-              {submitted ? (
-                <div className="mt-8 rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-center">
-                  <p className="text-lg font-semibold text-emerald-800">Request received!</p>
-                  <p className="mt-2 text-sm text-emerald-700">
-                    Booking integration coming next — your AI call flow will start here.
+              <div className="flex items-start gap-4">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-clinical-600 text-white">
+                  <Mic className="h-6 w-6" strokeWidth={1.75} aria-hidden />
+                </span>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900">Voice appointment booking</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                    Click below to open the assistant in your browser. It will ask for your name,
+                    reason for visit, and mobile number, then check availability and confirm a slot.
                   </p>
                 </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <label className="block">
-                      <span className="text-sm font-semibold text-slate-700">Full name</span>
-                      <input
-                        required
-                        type="text"
-                        placeholder="Mehak Saluja"
-                        className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-clinical-500 focus:ring-2 focus:ring-clinical-500/20"
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="text-sm font-semibold text-slate-700">Phone</span>
-                      <input
-                        required
-                        type="tel"
-                        placeholder="+919876543210"
-                        className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-clinical-500 focus:ring-2 focus:ring-clinical-500/20"
-                      />
-                    </label>
-                  </div>
-                  <label className="block">
-                    <span className="text-sm font-semibold text-slate-700">Reason for visit</span>
-                    <input
-                      required
-                      type="text"
-                      placeholder="Dental checkup, whitening..."
-                      className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-clinical-500 focus:ring-2 focus:ring-clinical-500/20"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="text-sm font-semibold text-slate-700">Message (optional)</span>
-                    <textarea
-                      rows={3}
-                      placeholder="Any notes for the clinic..."
-                      className="mt-1.5 w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-clinical-500 focus:ring-2 focus:ring-clinical-500/20"
-                    />
-                  </label>
-                  <button
-                    type="submit"
-                    className="w-full rounded-full bg-clinical-600 py-4 text-base font-semibold text-white shadow-lg shadow-clinical-600/25 transition hover:bg-clinical-700 sm:w-auto sm:px-10"
-                  >
-                    Book Appointment
-                  </button>
-                </form>
-              )}
+              </div>
+
+              <ul className="mt-6 space-y-2 text-sm text-slate-600">
+                <li className="flex gap-2">
+                  <span className="font-medium text-slate-800">1.</span>
+                  Allow microphone access when prompted
+                </li>
+                <li className="flex gap-2">
+                  <span className="font-medium text-slate-800">2.</span>
+                  Answer the assistant&apos;s questions naturally
+                </li>
+                <li className="flex gap-2">
+                  <span className="font-medium text-slate-800">3.</span>
+                  Confirm your preferred appointment time
+                </li>
+              </ul>
+
+              <button
+                type="button"
+                onClick={openVoiceBooking}
+                className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full bg-clinical-600 py-4 text-base font-semibold text-white shadow-lg shadow-clinical-600/25 transition hover:bg-clinical-700 sm:w-auto sm:px-10"
+              >
+                <Mic className="h-5 w-5" aria-hidden />
+                Start voice booking
+              </button>
+
+              <p className="mt-4 text-xs text-slate-500">
+                Runs in your browser — your phone will not ring.
+              </p>
             </div>
           </div>
 

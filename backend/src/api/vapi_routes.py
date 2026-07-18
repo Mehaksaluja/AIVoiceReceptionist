@@ -7,7 +7,11 @@ from typing import Any
 
 from fastapi import APIRouter, Request
 
-from src.agent.booking_logic import run_book_appointment, run_check_availability
+from src.agent.booking_logic import (
+    run_book_appointment,
+    run_check_availability,
+    run_save_patient_info,
+)
 from src.services.session_store import store
 
 router = APIRouter(prefix="/api/vapi", tags=["vapi"])
@@ -40,6 +44,17 @@ def _session_id_from_message(message: dict[str, Any], args: dict[str, Any]) -> s
 
 
 def _execute_tool(name: str, args: dict[str, Any], session_id: str | None) -> Any:
+    if name == "save_patient_info":
+        sid = args.get("session_id") or session_id
+        if not sid:
+            return {"success": False, "error": "session_id is required"}
+        return run_save_patient_info(
+            session_id=str(sid),
+            name=str(args.get("name", "")),
+            phone=str(args.get("phone", "")),
+            reason=str(args.get("reason", "")),
+        )
+
     if name == "check_availability":
         return run_check_availability(
             preferred_date=args.get("preferred_date"),

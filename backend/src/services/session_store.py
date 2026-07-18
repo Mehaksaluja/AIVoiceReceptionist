@@ -1,5 +1,10 @@
 from threading import Lock
 
+from src.agent.prompts import (
+    INTAKE_PLACEHOLDER_NAME,
+    INTAKE_PLACEHOLDER_PHONE,
+    INTAKE_PLACEHOLDER_REASON,
+)
 from src.models.booking import ActivityEvent, Booking, BookingStatus, Session
 
 
@@ -22,6 +27,39 @@ class SessionStore:
         with self._lock:
             self._sessions[session.session_id] = session
         return session
+
+    def create_intake(self) -> Session:
+        """Browser voice session — patient details collected during the call."""
+        return self.create(
+            name=INTAKE_PLACEHOLDER_NAME,
+            phone=INTAKE_PLACEHOLDER_PHONE,
+            reason=INTAKE_PLACEHOLDER_REASON,
+        )
+
+    def update_patient(
+        self,
+        session_id: str,
+        *,
+        name: str,
+        phone: str,
+        reason: str,
+    ) -> Session | None:
+        with self._lock:
+            session = self._sessions.get(session_id)
+            if not session:
+                return None
+            session.booking.name = name.strip()
+            session.booking.phone = phone.strip()
+            session.booking.reason = reason.strip()
+            session.booking.status = BookingStatus.IN_PROGRESS
+            session.activity.append(
+                ActivityEvent(
+                    step="patient_saved",
+                    message="Patient details saved from voice intake",
+                    metadata={"name": name, "phone": phone, "reason": reason},
+                )
+            )
+            return session
 
     def get(self, session_id: str) -> Session | None:
         with self._lock:

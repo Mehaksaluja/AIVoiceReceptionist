@@ -8,6 +8,7 @@ import {
   Wrench,
   type LucideIcon,
 } from "lucide-react";
+import { useBooking } from "../context/BookingContext";
 import SectionHeader from "./SectionHeader";
 
 const services: { icon: LucideIcon; title: string; desc: string }[] = [
@@ -44,6 +45,8 @@ const services: { icon: LucideIcon; title: string; desc: string }[] = [
 ];
 
 export default function Services() {
+  const { openVoiceBooking } = useBooking();
+
   return (
     <section id="services" className="bg-slate-50 py-20 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -64,13 +67,14 @@ export default function Services() {
               </span>
               <h3 className="mt-4 text-lg font-bold text-slate-900">{title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-slate-600">{desc}</p>
-              <a
-                href="#book"
+              <button
+                type="button"
+                onClick={openVoiceBooking}
                 className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-clinical-600 transition hover:text-clinical-700"
               >
                 Book this service
                 <ArrowRight className="h-4 w-4" aria-hidden />
-              </a>
+              </button>
             </article>
           ))}
         </div>

@@ -2,6 +2,7 @@
 .venv/
 venv/
 env/
+node_modules/
 
 # Secrets — never commit
 .env

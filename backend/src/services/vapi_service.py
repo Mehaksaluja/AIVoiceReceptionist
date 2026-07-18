@@ -1,4 +1,4 @@
-"""Vapi outbound voice calls."""
+"""Vapi outbound voice calls and browser web sessions."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from typing import Any
 
 import httpx
 
-from src.agent.prompts import build_system_prompt
+from src.agent.prompts import build_system_prompt, build_web_intake_prompt
 from src.config import settings
 from src.models.booking import Session
 
@@ -22,24 +22,67 @@ def _tool_definitions(webhook_url: str) -> list[dict[str, Any]]:
         {
             "type": "function",
             "function": {
+                "name": "save_patient_info",
+                "description": (
+                    "Save the patient's name, phone, and reason after collecting them in conversation."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "session_id": {
+                            "type": "string",
+                            "description": "Session id from the system prompt",
+                        },
+                        "name": {
+                            "type": "string",
+                            "description": "Patient full name",
+                        },
+                        "phone": {
+                            "type": "string",
+                            "description": "E.164 phone number, e.g. +919876543210",
+                        },
+                        "reason": {
+                            "type": "string",
+                            "description": "Reason for the dental visit",
+                        },
+                    },
+                    "required": ["session_id", "name", "phone", "reason"],
+                },
+            },
+            "server": {"url": webhook_url},
+        },
+        {
+            "type": "function",
+            "function": {
                 "name": "check_availability",
-                "description": "Check open appointment slots for a date/time preference.",
+                "description": (
+                    "Find open appointment slots on Google Calendar for a preferred day. "
+                    "Call ONLY after the patient says which day they are available. "
+                    "Returns real open times — read them aloud and ask which they prefer."
+                ),
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "preferred_date": {
                             "type": "string",
-                            "description": 'Date preference e.g. "tomorrow", "Friday"',
+                            "description": (
+                                'Required day preference from the patient, e.g. "tomorrow", '
+                                '"Friday", "next Monday", "today"'
+                            ),
                         },
                         "preferred_time": {
                             "type": "string",
-                            "description": 'Time preference e.g. "5pm", "17:00"',
+                            "description": (
+                                'Optional time preference if they mentioned one, e.g. "5pm", "morning". '
+                                "Leave empty if they only gave a day."
+                            ),
                         },
                         "session_id": {
                             "type": "string",
                             "description": "Session id from the system prompt",
                         },
                     },
+                    "required": ["preferred_date", "session_id"],
                 },
             },
             "server": {"url": webhook_url},
@@ -48,7 +91,10 @@ def _tool_definitions(webhook_url: str) -> list[dict[str, Any]]:
             "type": "function",
             "function": {
                 "name": "book_appointment",
-                "description": "Book the confirmed appointment after the patient agrees.",
+                "description": (
+                    "Book the appointment ONLY after the patient picked a slot AND confirmed. "
+                    "Use datetime_iso from the chosen check_availability slot."
+                ),
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -73,22 +119,36 @@ def _tool_definitions(webhook_url: str) -> list[dict[str, Any]]:
     ]
 
 
-def build_transient_assistant(session: Session, webhook_url: str) -> dict[str, Any]:
+def build_transient_assistant(
+    session: Session,
+    webhook_url: str,
+    *,
+    intake_mode: bool = False,
+) -> dict[str, Any]:
     """Inline assistant so tools always point at the current public URL (ngrok)."""
-    prompt = build_system_prompt(
-        patient_name=session.booking.name,
-        patient_phone=session.booking.phone,
-        appointment_reason=session.booking.reason,
-        booking_id=session.booking.id,
-        session_id=session.session_id,
-    )
-
-    first_name = session.booking.name.split()[0]
-    first_message = (
-        f"Hello {first_name}, I'm calling from {settings.clinic_name}. "
-        f"I noticed you requested an appointment for {session.booking.reason}. "
-        f"Would tomorrow at 4 PM work for you?"
-    )
+    if intake_mode:
+        prompt = build_web_intake_prompt(
+            booking_id=session.booking.id,
+            session_id=session.session_id,
+        )
+        first_message = (
+            f"Hello! Thank you for contacting {settings.clinic_name}. "
+            "I can help you book an appointment. May I have your full name, please?"
+        )
+    else:
+        prompt = build_system_prompt(
+            patient_name=session.booking.name,
+            patient_phone=session.booking.phone,
+            appointment_reason=session.booking.reason,
+            booking_id=session.booking.id,
+            session_id=session.session_id,
+        )
+        first_name = session.booking.name.split()[0]
+        first_message = (
+            f"Hello {first_name}, I'm calling from {settings.clinic_name} "
+            f"about your {session.booking.reason} appointment. "
+            f"When would you like to come in — which day works for you?"
+        )
 
     return {
         "name": f"{settings.clinic_name} Receptionist",
@@ -103,6 +163,10 @@ def build_transient_assistant(session: Session, webhook_url: str) -> dict[str, A
         "voice": {
             "provider": "vapi",
             "voiceId": "Elliot",
+        },
+        "metadata": {
+            "session_id": session.session_id,
+            "booking_id": session.booking.id,
         },
         "server": {"url": webhook_url},
         "serverMessages": [
@@ -154,7 +218,7 @@ async def create_outbound_call(session: Session) -> dict[str, Any]:
             "server": {"url": webhook_url},
         }
     else:
-        payload["assistant"] = build_transient_assistant(session, webhook_url)
+        payload["assistant"] = build_transient_assistant(session, webhook_url, intake_mode=False)
 
     headers = {
         "Authorization": f"Bearer {settings.vapi_api_key}",
@@ -175,7 +239,7 @@ async def create_outbound_call(session: Session) -> dict[str, Any]:
     return data
 
 
-def build_web_call_payload(session: Session) -> dict[str, Any]:
+def build_web_call_payload(session: Session, *, intake_mode: bool = True) -> dict[str, Any]:
     """
     Payload for browser Web SDK (@vapi-ai/web).
     Frontend uses public key + assistant config — no PSTN / Twilio needed.
@@ -190,7 +254,7 @@ def build_web_call_payload(session: Session) -> dict[str, Any]:
         )
 
     webhook_url = f"{settings.public_base_url.rstrip('/')}/api/vapi/webhook"
-    assistant = build_transient_assistant(session, webhook_url)
+    assistant = build_transient_assistant(session, webhook_url, intake_mode=intake_mode)
 
     return {
         "public_key": settings.vapi_public_key.strip(),
@@ -198,5 +262,5 @@ def build_web_call_payload(session: Session) -> dict[str, Any]:
         "session_id": session.session_id,
         "booking_id": session.booking.id,
         "caller_display_name": settings.clinic_name,
-        "caller_subtitle": "AI Receptionist",
+        "caller_subtitle": "Voice receptionist",
     }

@@ -9,7 +9,6 @@ from src.api.schemas import (
     ChatRequest,
     SessionResponse,
     StartSessionRequest,
-    WebCallRequest,
     WebCallResponse,
 )
 from src.config import settings
@@ -108,10 +107,11 @@ async def start_outbound_call(body: CallRequest) -> SessionResponse:
 
 
 @router.post("/web-call", response_model=WebCallResponse)
-async def start_web_call(body: WebCallRequest) -> WebCallResponse:
+async def start_web_call() -> WebCallResponse:
     """
-    Start a browser voice session (mobile-style UI).
+    Start a browser voice session.
     Returns Vapi public key + transient assistant for @vapi-ai/web.
+    The assistant collects name, phone, and reason during the conversation.
     """
     if not settings.has_vapi_web:
         raise HTTPException(
@@ -122,11 +122,11 @@ async def start_web_call(body: WebCallRequest) -> WebCallResponse:
             ),
         )
 
-    session = store.create(name=body.name, phone=body.phone, reason=body.reason)
-    store.log(session.session_id, "web_call_ready", "Browser incoming-call UI ready")
+    session = store.create_intake()
+    store.log(session.session_id, "web_call_ready", "Browser voice assistant ready")
 
     try:
-        payload = build_web_call_payload(session)
+        payload = build_web_call_payload(session, intake_mode=True)
     except VapiError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 

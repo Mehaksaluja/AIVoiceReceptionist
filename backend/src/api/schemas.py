@@ -29,15 +29,9 @@ class CallRequest(BaseModel):
 
 
 class WebCallRequest(BaseModel):
-    """Browser voice — phone optional (not dialed)."""
+    """Browser voice — details collected by the assistant during the call."""
 
-    name: str = Field(min_length=2, max_length=100)
-    phone: str = Field(
-        default="+910000000000",
-        pattern=r"^\+[1-9]\d{6,14}$",
-        description="Optional for web; used in booking record only",
-    )
-    reason: str = Field(min_length=3, max_length=500)
+    pass
 
 
 class WebCallResponse(BaseModel):
